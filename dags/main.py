@@ -4,7 +4,7 @@ from textwrap import dedent
 
 from airflow import DAG
 from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator, PythonVirtualenvOperator
+from airflow.operators.python import PythonOperator, PythonVirtualenvOperator, BranchPythonOperator
 
 from airflow.models import TaskInstance
 
@@ -17,7 +17,8 @@ with DAG(
         'email_on_failure': False,
         'email_on_retry': False,
         'retries': 1,
-        'retry_delay': timedelta(minutes=1)
+        'retry_delay': timedelta(minutes=1),
+        'provide_context': True
     },
     description='Team 2 load airflow DAG',
     schedule_interval="@once",
@@ -41,6 +42,17 @@ with DAG(
         r = select(sql, 1)
 
         if len(r) > 0:
+            import os
+
+            tmp_path = f"{os.path.dirname(os.path.abspath(__file__))}/tmp/"
+
+            # 저장경로가 없으면 디렉토리 생성
+            os.makedirs(tmp_path, exist_ok=True)
+
+            # log파일 실제 생성, a 옵션=append, 저장되는 정보는 아래 정의된 3가지
+            with open(f"{tmp_path}/tmp", "w") as f:
+                f.write(str(r[0]))
+
             return r[0]
         else:
             return None
@@ -53,7 +65,13 @@ with DAG(
     )
    
     def pred(**context):
-        data = context['return_value'].xcom_pull(task_ids=f'get_db')
+        #data = context['task_instance'].xcom_pull(task_ids=f'get_db')
+        tmp_path = f"{os.path.dirname(os.path.abspath(__file__))}/tmp/"
+
+        # r
+        with open(f"{tmp_path}/tmp", "r") as f:
+            data = f.read()
+            data = eval(data)
 
         # 모델 원본
         import requests
@@ -102,16 +120,27 @@ with DAG(
         print(f"result : {preds.item()}")
         print(f"result : {age_band_mapping[preds.item()]}")
 
-        # with open("","w") as f:
-        #     f.write(preds.item(), proba[0][preds.item()].item())
+        ############################################################################
+        tmp_path = f"{os.path.dirname(os.path.abspath(__file__))}/tmp/"
+
+        # log파일 실제 생성, a 옵션=append, 저장되는 정보는 아래 정의된 3가지
+        with open(f"{tmp_path}/tmp", "w") as f:
+            f.write(f"{data['num']}, {preds.item()}, {proba[0][preds.item()].item()}")
+        ############################################################################
         return preds.item(), proba[0][preds.item()].item()      # 예측결과와 그 확률 반환
 
 
     def save(**context):
         # predict task에서 반환한 값을 이어서 사용하도록 하는 코드
-        rst, prob = context['task_instance'].xcom_pull(task_ids=f'predict')
-        data = context['task_instance'].xcom_pull(task_ids=f'get_db')
+        # rst, prob = context['task_instance'].xcom_pull(task_ids=f'predict')
+        # data = context['task_instance'].xcom_pull(task_ids=f'get_db')
         # data = {'num': 1, 'file_path': '/home/ubuntu/images/11a57bb1-55b0-490f-afd9-a077b4c60057.jpeg'} :: dict
+        # r
+        tmp_path = f"{os.path.dirname(os.path.abspath(__file__))}/tmp/"
+
+        with open(f"{tmp_path}/tmp", "r") as f:
+            data = f.read()
+            num, rst, prob  = data.strip().split(",")
 
         # 한국 시간
         dt=datetime.now(timezone(timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S')
@@ -124,7 +153,15 @@ with DAG(
 
         # log파일 실제 생성, a 옵션=append, 저장되는 정보는 아래 정의된 3가지
         with open(f"{log_path}/pred.log", "a") as f:
-            f.write(f"{data['num']},{rst},{dt}\n")
+            f.write(f"{num},{rst},{dt}\n")
+
+        os.remove(f"{tmp_path}/tmp")
+
+    def branch():
+        if os.path.exists(f"{os.path.dirname(os.path.abspath(__file__))}/tmp/tmp"):
+            return "predict"
+        else:
+            return "end"
 
     task_pred = PythonVirtualenvOperator(
         task_id="predict",
@@ -139,7 +176,14 @@ with DAG(
         python_callable=save
     )
 
-    task_end = EmptyOperator(task_id='end')
+    task_branch = BranchPythonOperator(
+        task_id="task.branch",
+        python_callable=branch,
+    )
+
+    task_end = EmptyOperator(task_id='end', trigger_rule="all_done")
     task_start = EmptyOperator(task_id='start')
 
-    task_start >> task_get_db >> task_pred >> task_save_log >> task_end
+    task_start >> task_get_db >> task_branch
+    task_branch >> task_pred >> task_save_log >> task_end   # db 데이터 있는 경우
+    task_branch >> task_end   # db 데이터 없는 경우
