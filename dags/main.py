@@ -11,7 +11,7 @@ from airflow.operators.python import PythonVirtualenvOperator
 
 
 with DAG(
-    'Team 2',
+    'Team2',
     # These args will get passed on to each operator
     # You can override them on a per-task basis during operator initialization
     default_args={
@@ -22,23 +22,23 @@ with DAG(
         'retry_delay': timedelta(minutes=1)
     },
     description='Team 2 load airflow DAG',
-    schedule_interval="*/3 * * * *",
+    schedule_interval="* * * * *",
     start_date=datetime(2024, 9, 30),
-    end_date=datetime(2024, 10, 2),
+    end_date=datetime(2024, 10, 1),
     catchup=True,
     tags=['team2'],
 ) as dag:
 
 
     def db():
-        from dags.db import select
+        from db import select
 
         select()
 
     task_get_db = PythonVirtualenvOperator(
             task_id="get_db",
             python_callable=db,
-            requirements=["git+https://github.com/DE32-3rd-team2/airflow.git@2.1/db"]
+            requirements=["git+https://github.com/DE32-3rd-team2/airflow.git@2.1/db"],
             system_site_packages=False
             )
 
