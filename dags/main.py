@@ -51,7 +51,7 @@ with DAG(
             system_site_packages=False
     )
    
-    def pred():
+    def pred(**context):
         data = context['task_instance'].xcom_pull(task_ids=f'get_db')
 
         # 모델 원본
