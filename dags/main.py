@@ -23,8 +23,7 @@ with DAG(
     },
     description='Team 2 load airflow DAG',
     schedule_interval="* * * * *",
-    start_date=datetime(2024, 9, 30),
-    end_date=datetime(2024, 10, 1),
+    start_date=datetime(2024, 10, 4),
     catchup=True,
     tags=['team2'],
 ) as dag:
