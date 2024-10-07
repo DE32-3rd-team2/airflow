@@ -33,7 +33,20 @@ with DAG(
     def db():
         from airflow.db import select
 
-        select()
+        sql = """
+            SELECT
+            num, file_path
+            FROM face_age
+            WHERE prediction_result IS NULL
+            ORDER BY num
+            LIMIT 1
+            """
+        r = select(sql, 1)
+
+        if len(r) > 0:
+            return r[0]
+        else:
+            return None
 
     task_get_db = PythonVirtualenvOperator(
             task_id="get_db",
