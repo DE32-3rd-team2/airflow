@@ -6,6 +6,7 @@ from airflow import DAG
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import PythonOperator, PythonVirtualenvOperator
 
+from airflow.models import TaskInstance
 
 with DAG(
     'Team2',
@@ -47,12 +48,12 @@ with DAG(
     task_get_db = PythonVirtualenvOperator(
             task_id="get_db",
             python_callable=db,
-            requirements=["git+https://github.com/DE32-3rd-team2/airflow.git@2.1/db"],
+            requirements=["git+https://github.com/DE32-3rd-team2/airflow.git@2.3.1/fix"],
             system_site_packages=False
     )
    
     def pred(**context):
-        data = context['task_instance'].xcom_pull(task_ids=f'get_db')
+        data = context['return_value'].xcom_pull(task_ids=f'get_db')
 
         # 모델 원본
         import requests
@@ -101,6 +102,8 @@ with DAG(
         print(f"result : {preds.item()}")
         print(f"result : {age_band_mapping[preds.item()]}")
 
+        # with open("","w") as f:
+        #     f.write(preds.item(), proba[0][preds.item()].item())
         return preds.item(), proba[0][preds.item()].item()      # 예측결과와 그 확률 반환
 
 
