@@ -31,7 +31,7 @@ with DAG(
 
 
     def db():
-        from dags.db import select
+        from airflow.db import select
 
         select()
 

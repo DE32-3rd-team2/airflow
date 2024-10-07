@@ -5,7 +5,9 @@ description = "Default template for PDM package"
 authors = [
     {name = "S00zzang", email = "sujinpark8719561@gmail.com"},
 ]
-dependencies = []
+dependencies = [
+    "pymysql>=1.1.1",
+]
 requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "MIT"}
