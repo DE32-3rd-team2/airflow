@@ -9,7 +9,7 @@ def get_conn():
         port = int(db_port),
         user = "3rd",
         passwd = "1234",
-        db = "mariadb",
+        db = "team2",
         cursorclass=pymysql.cursors.DictCursor
         )
 
