@@ -19,7 +19,7 @@ with DAG(
         'retry_delay': timedelta(minutes=1)
     },
     description='Team 2 load airflow DAG',
-    schedule_interval="* * * * *",
+    schedule_interval="@once",
     start_date=datetime(2024, 10, 4),
     catchup=True,
     tags=['team2'],
@@ -49,9 +49,11 @@ with DAG(
             python_callable=db,
             requirements=["git+https://github.com/DE32-3rd-team2/airflow.git@2.1/db"],
             system_site_packages=False
-            )
+    )
    
     def pred():
+        data = context['task_instance'].xcom_pull(task_ids=f'get_db')
+
         ########## 모델 그대로 임 #####################################################################
         import requests
         from PIL import Image
@@ -60,8 +62,11 @@ with DAG(
         from transformers import ViTFeatureExtractor, ViTForImageClassification
 
         # Get example image from official fairface repo + read it in as an image
-        r = requests.get('https://github.com/dchen236/FairFace/blob/master/detected_faces/race_Asian_face0.jpg?raw=true')
-        im = Image.open(BytesIO(r.content))
+        # r = requests.get('https://github.com/dchen236/FairFace/blob/master/detected_faces/race_Asian_face0.jpg?raw=true')
+        # im = Image.open(BytesIO(r.content))
+
+        img_path = data["file_path"]
+        img = Image.open(img_path)
 
         # Init model, transforms
         model = ViTForImageClassification.from_pretrained('nateraw/vit-age-classifier')
@@ -106,8 +111,8 @@ with DAG(
     def save(**context):
         ### predict task에서 반환한 값을 이어서 사용하도록 하는 코드
         rst, prob = context['task_instance'].xcom_pull(task_ids=f'predict')
-        ### DB에서 가져온 num 값
-        num=1
+        data = context['task_instance'].xcom_pull(task_ids=f'get_db')
+        # data = {'num': 1, 'file_path': '/home/ubuntu/images/11a57bb1-55b0-490f-afd9-a077b4c60057.jpeg'} :: dict
 
         ### 한국시간으로 만들기
         dt=datetime.now(timezone(timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S')
@@ -120,7 +125,7 @@ with DAG(
 
         ### log파일 실제 생성, a 옵션=append, 저장되는 정보는 아래 정의된 3가지
         with open(f"{log_path}/pred.log", "a") as f:
-            f.write(f"{num},{rst},{dt}\n")
+            f.write(f"{data["num"]},{rst},{dt}\n")
 
     task_pred = PythonVirtualenvOperator(
         task_id="predict",
