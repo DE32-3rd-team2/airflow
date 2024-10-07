@@ -31,7 +31,7 @@ with DAG(
 
 
     def db():
-        from db import select
+        from dags.db import select
 
         select()
 
