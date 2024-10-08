@@ -22,8 +22,8 @@ with DAG(
         'provide_context': True
     },
     description='Team 2 load airflow DAG',
-    schedule_interval="@once",
-    start_date=datetime(2024, 10, 4),
+    schedule="*/5 * * * *",
+    start_date=datetime(2024, 10, 8),
     catchup=True,
     tags=['team2'],
 ) as dag:
@@ -123,7 +123,7 @@ with DAG(
 #         with open(f"{tmp_path}/tmp", "w") as f:
 #             f.write(f"{data['num']}, {preds.item()}, {proba[0][preds.item()].item()}")
         ############################################################################
-        return preds.item(), proba[0][preds.item()].item()      # 예측결과와 그 확률 반환
+        return preds.item(), proba[0][preds.item()].item()      # 예측결과와 그 확 률 반환
 
 
     def save(db_data, pred_data):
@@ -136,7 +136,6 @@ with DAG(
 
         # 한국 시간
         dt=datetime.now(timezone(timedelta(hours=9))).strftime('%Y-%m-%d %H:%M:%S')
-
         # log가 저장되는 위치, dag파일이 저장된 위치의 상위 디렉토리 밑에 logs/prediction/ 에 저장
         log_path = f"{os.path.dirname(os.path.abspath(__file__))}/../logs/prediction/"
 
@@ -148,17 +147,16 @@ with DAG(
         # log파일 실제 생성, a 옵션=append, 저장되는 정보는 아래 정의된 3가지
         with open(f"{log_path}/pred.log", "r") as f:
             for i in f:
-                n,rst,dt=i.strip().split(",")
-                print(n, data['num'],n==data['num'])
+                n,log_rst,log_dt=i.strip().split(",")
                 if int(data['num'])==int(n):
                     saved=True
-
         if saved==False:
             with open(f"{log_path}/pred.log", "a") as f:
                 f.write(f"{data['num']},{rst},{dt}\n")
 
     def branch(db_data):
         #if os.path.exists(f"{os.path.dirname(os.path.abspath(__file__))}/tmp/tmp"):
+        print(f"db_data ::::: {db_data}")
         if db_data:
             return "predict"
         else:
