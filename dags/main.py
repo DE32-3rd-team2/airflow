@@ -144,9 +144,9 @@ with DAG(
             if !saved:
                 f.write(f"{data['num']},{rst},{dt}\n")
 
-    def branch():
+    def branch(db_data):
         #if os.path.exists(f"{os.path.dirname(os.path.abspath(__file__))}/tmp/tmp"):
-        if True:
+        if db_data:
             return "predict"
         else:
             return "end"
@@ -175,6 +175,9 @@ with DAG(
     task_branch = BranchPythonOperator(
         task_id="task.branch",
         python_callable=branch,
+        op_kwargs={
+            "db_data": "{{ ti.xcom_pull(task_ids='get_db') }}"
+        },
     )
 
     task_end = EmptyOperator(task_id='end', trigger_rule="all_done")
