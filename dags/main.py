@@ -133,8 +133,16 @@ with DAG(
         os.makedirs(log_path, exist_ok=True)
 
         # log파일 실제 생성, a 옵션=append, 저장되는 정보는 아래 정의된 3가지
-        with open(f"{log_path}/pred.log", "a") as f:
-            f.write(f"{data['num']},{rst},{dt}\n")
+        with open(f"{log_path}/pred.log", "ra") as f:
+            saved=False
+
+            for i in f.readline():
+                n,rst,dt = i.strip().split(",")
+                if data['num']==n:
+                    saved=True
+
+            if !saved:
+                f.write(f"{data['num']},{rst},{dt}\n")
 
     def branch():
         #if os.path.exists(f"{os.path.dirname(os.path.abspath(__file__))}/tmp/tmp"):
