@@ -22,7 +22,7 @@ with DAG(
         'provide_context': True
     },
     description='Team 2 load airflow DAG',
-    schedule="*/5 * * * *",
+    schedule="*/3 * * * *",
     start_date=datetime(2024, 10, 8),
     catchup=True,
     tags=['team2'],
@@ -123,7 +123,7 @@ with DAG(
 #         with open(f"{tmp_path}/tmp", "w") as f:
 #             f.write(f"{data['num']}, {preds.item()}, {proba[0][preds.item()].item()}")
         ############################################################################
-        return preds.item(), proba[0][preds.item()].item()      # 예측결과와 그 확 률 반환
+        return preds.item(), proba[0][preds.item()].item()      # 예측결과와 그 확률 반환
 
 
     def save(db_data, pred_data):
@@ -156,7 +156,6 @@ with DAG(
 
     def branch(db_data):
         #if os.path.exists(f"{os.path.dirname(os.path.abspath(__file__))}/tmp/tmp"):
-        print(f"db_data ::::: {db_data}")
         if db_data:
             return "predict"
         else:
