@@ -8,8 +8,9 @@ from airflow.operators.python import PythonOperator, PythonVirtualenvOperator, B
 
 from airflow.models import TaskInstance
 
+
 with DAG(
-    'Team2bak',
+    'Team2',
     # These args will get passed on to each operator
     # You can override them on a per-task basis during operator initialization
     default_args={
@@ -30,12 +31,22 @@ with DAG(
 
     def db():
         from airflow.db import select
+        import os
 
-        sql = """
+        home_path=os.path.expanduser("~")
+        log_path = f"{home_path}/airflow/logs/prediction/"
+        with open(f"{log_path}/pred.log", "r") as f:
+            lines = f.readlines()
+            if lines:
+                last_line = lines[-1]
+                n, rst, dt = last_line.strip().split(",")
+                log_num = n
+
+        sql = f"""
             SELECT
             num, file_path
             FROM face_age
-            WHERE prediction_result IS NULL
+            WHERE num>{log_num}
             ORDER BY num
             LIMIT 1
             """
@@ -132,16 +143,18 @@ with DAG(
         # 저장경로가 없으면 디렉토리 생성
         os.makedirs(log_path, exist_ok=True)
 
-        # log파일 실제 생성, a 옵션=append, 저장되는 정보는 아래 정의된 3가지
-        with open(f"{log_path}/pred.log", "ra") as f:
-            saved=False
+        saved=False
 
-            for i in f.readline():
-                n,rst,dt = i.strip().split(",")
-                if data['num']==n:
+        # log파일 실제 생성, a 옵션=append, 저장되는 정보는 아래 정의된 3가지
+        with open(f"{log_path}/pred.log", "r") as f:
+            for i in f:
+                n,rst,dt=i.strip().split(",")
+                print(n, data['num'],n==data['num'])
+                if int(data['num'])==int(n):
                     saved=True
 
-            if !saved:
+        if saved==False:
+            with open(f"{log_path}/pred.log", "a") as f:
                 f.write(f"{data['num']},{rst},{dt}\n")
 
     def branch(db_data):
