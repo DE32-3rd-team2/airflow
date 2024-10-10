@@ -156,7 +156,7 @@ with DAG(
 
     def branch(db_data):
         #if os.path.exists(f"{os.path.dirname(os.path.abspath(__file__))}/tmp/tmp"):
-        if db_data:
+        if eval(db_data):
             return "predict"
         else:
             return "end"
