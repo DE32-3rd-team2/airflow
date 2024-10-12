@@ -2,7 +2,7 @@ import pymysql
 import os
 
 def get_conn():
-    db_host = os.getenv("DB_IP", "43.201.16.62")
+    db_host = os.getenv("DB_IP", "52.78.181.205")
     db_port = os.getenv("DB_PORT", 23306)
     conn = pymysql.connect(
         host = db_host,
