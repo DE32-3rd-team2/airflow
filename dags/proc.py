@@ -123,7 +123,6 @@ with DAG(
         python_callable=save
     )
 
-
     task_start = EmptyOperator(task_id='start')
     task_end = EmptyOperator(task_id='end', trigger_rule='all_done')
 
